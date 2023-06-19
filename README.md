@@ -1,0 +1,1 @@
+Helps manage shared expenses with friends and family on vacation.  This is a work in progress and might never be finished.  It is a mainly a learning project.
