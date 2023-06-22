@@ -1,5 +1,6 @@
 import sqlite3
 from sqlite3 import Error
+import re
 
 # Create database
 def create_connection(db_file):
@@ -20,6 +21,54 @@ def create_table(conn, create_table_sql):
         print("Table created")
     except Error as e:
         print(e)
+
+def create_db():
+    database = r"kvitto.db"
+
+    ### SQL statements ###
+    # Create user table
+    sql_create_user_table = """ CREATE TABLE IF NOT EXISTS user (
+                                        id integer PRIMARY KEY,
+                                        name text NOT NULL
+                                    ); """
+    
+    # Create receipt table
+    sql_create_receipt_table = """ CREATE TABLE IF NOT EXISTS receipt (
+                                        timestamp text PRIMARY KEY,
+                                        store text NOT NULL,
+                                        victim text NOT NULL,
+                                        FOREIGN KEY (victim) REFERENCES user (id)
+                                    ); """
+    
+    sql_create_item_table = """ CREATE TABLE IF NOT EXISTS item (
+                                        timestamp text,
+                                        name text,
+                                        price real NOT NULL,
+                                        payor text,
+                                        PRIMARY KEY (timestamp, name),
+                                        FOREIGN KEY (timestamp) REFERENCES receipt (timestamp)
+                                    ); """
+
+    sql_create_status_table = """ CREATE TABLE IF NOT EXISTS status (
+                                        timestamp text,
+                                        user text,
+                                        status text NOT NULL DEFAULT 'unpaid',
+                                        PRIMARY KEY (timestamp, user),
+                                        FOREIGN KEY (timestamp) REFERENCES receipt (timestamp),
+                                        FOREIGN KEY (user) REFERENCES user (id)
+                                    ); """
+
+    
+    # create a database connection
+    conn = create_connection(database)
+    if conn is not None:
+        create_table(conn, sql_create_user_table)
+        create_table(conn, sql_create_receipt_table)
+        create_table(conn, sql_create_item_table)
+        create_table(conn, sql_create_status_table)
+        print("Database created!")
+    else:
+        print("Error! cannot create the database connection.")
 
 
 # Insert into database
@@ -76,54 +125,28 @@ def create_status(conn, timestamp, user, status):
     conn.commit()
 
 
-
-def create_db():
-    database = r"kvitto.db"
-
-    ### SQL statements ###
-    # Create user table
-    sql_create_user_table = """ CREATE TABLE IF NOT EXISTS user (
-                                        id integer PRIMARY KEY,
-                                        name text NOT NULL
-                                    ); """
+# Get receipt data
+def get_receipt(conn, text, store, victim):
+    """
+    Get receipt data
+    :param conn:
+    :param text:
+    :return: receipt data
+    """
+    # Get timestamp
+    timestamp = re.search(r'\d{2}.\d{2}.\d{2} \d{2}:\d{2}', text).group()
+    print('before: ', timestamp)
+    d = timestamp[0:2]
+    m = timestamp[3:5]
+    y = timestamp[6:8]
+    timestamp = '20' + y + '-' + m + '-' + d + ' ' + timestamp[9:14]
+    print('after: ', timestamp)
+    #get items
     
-    # Create receipt table
-    sql_create_receipt_table = """ CREATE TABLE IF NOT EXISTS receipt (
-                                        timestamp text PRIMARY KEY,
-                                        store text NOT NULL,
-                                        victim text NOT NULL,
-                                        FOREIGN KEY (victim) REFERENCES user (id)
-                                    ); """
-    
-    sql_create_item_table = """ CREATE TABLE IF NOT EXISTS item (
-                                        timestamp text,
-                                        name text,
-                                        price real NOT NULL,
-                                        payor text,
-                                        PRIMARY KEY (timestamp, name),
-                                        FOREIGN KEY (timestamp) REFERENCES receipt (timestamp)
-                                    ); """
-
-    sql_create_status_table = """ CREATE TABLE IF NOT EXISTS status (
-                                        timestamp text,
-                                        user text,
-                                        status text NOT NULL DEFAULT 'unpaid',
-                                        PRIMARY KEY (timestamp, user),
-                                        FOREIGN KEY (timestamp) REFERENCES receipt (timestamp),
-                                        FOREIGN KEY (user) REFERENCES user (id)
-                                    ); """
-
-    
-    # create a database connection
-    conn = create_connection(database)
-    if conn is not None:
-        create_table(conn, sql_create_user_table)
-        create_table(conn, sql_create_receipt_table)
-        create_table(conn, sql_create_item_table)
-        create_table(conn, sql_create_status_table)
-        print("Database created!")
-    else:
-        print("Error! cannot create the database connection.")
+    return timestamp
 
 def main():
     create_db()
+    get_receipt(open('test.txt', 'r').read())
+
+main()
