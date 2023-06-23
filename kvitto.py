@@ -28,7 +28,7 @@ def create_db():
     ### SQL statements ###
     # Create user table
     sql_create_user_table = """ CREATE TABLE IF NOT EXISTS user (
-                                        id integer PRIMARY KEY,
+                                        id INTEGER PRIMARY KEY AUTOINCREMENT,
                                         name text NOT NULL
                                     ); """
     
@@ -44,6 +44,7 @@ def create_db():
                                         timestamp text,
                                         name text,
                                         price real NOT NULL,
+                                        qty INTEGER NOT NULL,
                                         payor text,
                                         PRIMARY KEY (timestamp, name),
                                         FOREIGN KEY (timestamp) REFERENCES receipt (timestamp)
@@ -91,25 +92,23 @@ def create_receipt(conn, timestamp, store, victim):
     Create a new receipt into the receipt table
     :param conn:
     :param receipt:
-    :return: receipt id
     """
     sql = ''' INSERT INTO receipt(timestamp,store,victim)
               VALUES(?,?,?) '''
     cur = conn.cursor()
     cur.execute(sql, (timestamp,store,victim))
     conn.commit()
-    return cur.lastrowid
 
-def create_item(conn, timestamp, name, price, payor):
+def create_item(conn, timestamp, name, price, qty):
     """
     Create a new item into the item table
     :param conn:
     :param item:
     """
-    sql = ''' INSERT INTO item(timestamp,name,price)
-              VALUES(?,?,?) '''
+    sql = ''' INSERT INTO item(timestamp,name,price,qty)
+              VALUES(?,?,?,?) '''
     cur = conn.cursor()
-    cur.execute(sql, (timestamp,name,price))
+    cur.execute(sql, (timestamp,name,price,qty))
     conn.commit()
 
 def create_status(conn, timestamp, user, status):
@@ -126,10 +125,9 @@ def create_status(conn, timestamp, user, status):
 
 
 # Get receipt data
-def get_receipt(conn, text, store, victim):
+def get_timestamp(text):
     """
     Get receipt data
-    :param conn:
     :param text:
     :return: receipt data
     """
@@ -141,12 +139,62 @@ def get_receipt(conn, text, store, victim):
     y = timestamp[6:8]
     timestamp = '20' + y + '-' + m + '-' + d + ' ' + timestamp[9:14]
     print('after: ', timestamp)
-    #get items
-    
     return timestamp
+
+def get_items(text):
+    """
+    Get receipt data
+    :param text:
+    :return: receipt data
+    """
+    all_products = re.search(r'start([\s\S]*?)end', text).group()
+    all_products = all_products.split('\n')
+    #remove first and last element
+    all_products.pop(0)
+    all_products.pop()
+    # connect item to price
+    items = []
+    for product in all_products:
+        product = product.replace('0%','15%').replace('25%','15%').split(' 15% ')
+        items.append([product[0], float(product[-1].replace(',','.'))])
+        items[-1].append(1)
+    # merge duplicate items
+    for i in range(len(items)):
+        for j in range(i+1,len(items)):
+            if items[i][0] == items[j][0]:
+                items[i][2] += items[j][2]
+                items[j][2] = 0
+    # remove duplicates
+    items = [item for item in items if item[2] != 0]
+    print(items)
+    return items
+
+def new_receipt(conn, receipt, store, victim):
+    """
+    Get receipt data
+    :param conn:
+    :param receipt:
+    :param store:
+    :param victim:
+    :return: receipt data
+    """
+    create_receipt(conn, get_timestamp(receipt), store, victim)
+    for items in get_items(receipt):
+        create_item(conn, get_timestamp(receipt), items[0], items[1], items[2])
+
 
 def main():
     create_db()
-    get_receipt(open('test.txt', 'r').read())
+    conn = create_connection(r"kvitto.db")
+    create_user(conn, ('Johan',))
+    create_user(conn, ('Erik',))
+    create_user(conn, ('Kalle',))
+    store = 'SPAR'
+    victim = 'Johan'
+    receipt = open('test.txt', 'r').read()
+    new_receipt(conn, receipt, store, victim)
+    
+
+    
 
 main()
