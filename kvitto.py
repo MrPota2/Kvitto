@@ -3,27 +3,18 @@ from sqlite3 import Error
 import re
 
 # Create database
-def create_connection(db_file):
+def create_connection(trip_name):
     """ create a database connection to a SQLite database """
     try:
-        conn = sqlite3.connect(db_file)
+        conn = sqlite3.connect(r'db/' + trip_name + '.db')
         print("Connected to database")
         return conn
     except Error as e:
         print(e)
 
 
-def create_table(conn, create_table_sql):
-    """ create a table from the create_table_sql statement """
-    try:
-        c = conn.cursor()
-        c.execute(create_table_sql)
-        print("Table created")
-    except Error as e:
-        print(e)
-
-def create_db():
-    database = r"kvitto.db"
+def create_db(trip_name):
+    database = r"db/" + trip_name + ".db"
 
     ### SQL statements ###
     # Create user table
@@ -61,7 +52,7 @@ def create_db():
 
     
     # create a database connection
-    conn = create_connection(database)
+    conn = create_connection(trip_name)
     if conn is not None:
         create_table(conn, sql_create_user_table)
         create_table(conn, sql_create_receipt_table)
@@ -71,6 +62,16 @@ def create_db():
     else:
         print("Error! cannot create the database connection.")
 
+    return conn
+
+def create_table(conn, create_table_sql):
+    """ create a table from the create_table_sql statement """
+    try:
+        c = conn.cursor()
+        c.execute(create_table_sql)
+        print("Table created")
+    except Error as e:
+        print(e)
 
 # Insert into database
 def create_user(conn, user):
@@ -178,14 +179,15 @@ def new_receipt(conn, receipt, store, victim):
     :param victim:
     :return: receipt data
     """
-    create_receipt(conn, get_timestamp(receipt), store, victim)
+    timestamp = get_timestamp(receipt)
+    create_receipt(conn, timestamp, store, victim)
     for items in get_items(receipt):
-        create_item(conn, get_timestamp(receipt), items[0], items[1], items[2])
+        create_item(conn, timestamp, items[0], items[1], items[2])
 
 
 def main():
-    create_db()
-    conn = create_connection(r"kvitto.db")
+    conn = create_db('hvasser')
+    #conn = create_connection('hvasser')
     create_user(conn, ('Johan',))
     create_user(conn, ('Erik',))
     create_user(conn, ('Kalle',))
@@ -197,4 +199,4 @@ def main():
 
     
 
-main()
+#main()
