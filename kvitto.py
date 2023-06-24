@@ -2,7 +2,7 @@ import sqlite3
 from sqlite3 import Error
 import re
 
-# Create database
+
 def create_connection(trip_name):
     """ create a database connection to a SQLite database """
     try:
@@ -58,11 +58,14 @@ def create_db(trip_name):
         create_table(conn, sql_create_receipt_table)
         create_table(conn, sql_create_item_table)
         create_table(conn, sql_create_status_table)
+        conn.commit()
+        conn.close()
         print("Database created!")
     else:
         print("Error! cannot create the database connection.")
 
-    return conn
+    
+
 
 def create_table(conn, create_table_sql):
     """ create a table from the create_table_sql statement """
