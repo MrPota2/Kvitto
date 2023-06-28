@@ -112,7 +112,60 @@ def trip_menu(event):
 
 
     def new_receipt():
-        None
+        def on_entry_click(event):
+            """function that gets called whenever entry is clicked"""
+            if ent_timestamp.get() == '31-12-2023 12:59:59':
+                ent_timestamp.delete(0, "end") # delete all the text in the ent_timestamp
+                ent_timestamp.insert(0, '') #Insert blank for user input
+                ent_timestamp.config(fg = 'black')
+        def on_focusout(event):
+            if ent_timestamp.get() == '':
+                ent_timestamp.insert(0, '31-12-2023 12:59:59')
+                ent_timestamp.config(fg = 'grey')
+
+        def create_receipt():
+            conn = kvitto.create_connection(trip_name)
+            conn.execute("INSERT INTO receipt (timestamp, store) VALUES (?, ?);", (receipt_timestamp.get(), receipt_store.get()))
+            conn.commit()
+            conn.close()
+            print('disconnected from db')
+            kvitto.get_items(trip_name, txt_receipt.get('1.0', 'END'))
+            items=new_receipt.destroy()
+            for item in items:
+                kvitto.create_item(trip_name, item)
+            get_receipts()
+
+        new_receipt = Toplevel(win_trip)
+        new_receipt.title("Add receipt")
+
+        lbl_timestamp = Label(new_receipt, text="Timestamp:")
+        lbl_timestamp.grid(row=0, column=0, padx=5, pady=5, sticky=W)
+
+        receipt_timestamp = StringVar()
+        ent_timestamp = Entry(new_receipt, width=20, textvariable=receipt_timestamp)
+        ent_timestamp.grid(row=0, column=1, padx=5, pady=5, sticky=W)
+        
+        ent_timestamp.insert(0, '31-12-2023 12:59:59')
+        ent_timestamp.config(fg = 'grey')
+        ent_timestamp.bind('<FocusIn>', on_entry_click)
+        ent_timestamp.bind('<FocusOut>', on_focusout)
+
+        lbl_store = Label(new_receipt, text="Store:")
+        lbl_store.grid(row=1, column=0, padx=5, pady=5, sticky=W)
+
+        receipt_store = StringVar()
+        ent_store = Entry(new_receipt, width=20, textvariable=receipt_store)
+        ent_store.grid(row=1, column=1, padx=5, pady=5, sticky=W)
+
+        lbl_receipt = Label(new_receipt, text="Receipt text:", font=(H1))
+        lbl_receipt.grid(row=2, column=0, padx=5, pady=5, sticky=W)
+
+
+        txt_receipt = Text(new_receipt, width=40, height=50, wrap=WORD)
+        txt_receipt.grid(row=3, column=0, columnspan=2, padx=5, pady=5, sticky=W)
+
+        btn_confirm = Button(new_receipt, text="Confirm", width=20, command=create_receipt)
+        btn_confirm.grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky=S)
 
     def new_user():
         def create_user():
@@ -123,7 +176,6 @@ def trip_menu(event):
             print('disconnected from db')
             new_user.destroy()
             get_users()
-
     
         new_user = Toplevel(win_trip)
         new_user.title("Add user")
