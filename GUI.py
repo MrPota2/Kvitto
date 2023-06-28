@@ -47,8 +47,8 @@ def trip_menu(event):
     def get_receipts():
         conn = kvitto.create_connection(trip_name)
         receipts = []
-        receipt_table = conn.execute("SELECT * FROM receipt")
-        sum_per_receipt = conn.execute("SELECT timestamp, SUM(price*qty) AS sum FROM item GROUP BY timestamp")
+        receipt_table = conn.execute("SELECT * FROM receipt;")
+        sum_per_receipt = conn.execute("SELECT timestamp, SUM(price*qty) AS sum FROM item GROUP BY timestamp;")
         for receipt in receipt_table:
             for sum in sum_per_receipt:
                 if receipt[0] == sum[0]:
@@ -56,7 +56,7 @@ def trip_menu(event):
         for receipt in receipts:
             trw_receipts.insert("", "end", values=receipt)
         #sum of all receipts
-        total = conn.execute("SELECT SUM(price*qty) AS sum FROM item")
+        total = conn.execute("SELECT SUM(price*qty) AS sum FROM item;")
         total = total.fetchone()[0]
         total = round(total, 2)
         receipts_sum.set(total)
@@ -65,14 +65,50 @@ def trip_menu(event):
 
     def get_users():
         conn = kvitto.create_connection(trip_name)
-        user_table = conn.execute("SELECT name FROM user")
+        user_table = conn.execute("SELECT name FROM user;")
         for user in user_table:
             trw_users.insert("", "end", values=user)
         conn.close()
         print('disconnected from db')
 
-    def receipt_menu():
-        None
+    def receipt_menu(event):
+        receipt_timestamp = trw_receipts.item(trw_receipts.selection())['values'][0]
+        receipt_store = trw_receipts.item(trw_receipts.selection())['values'][1]
+        receipt_title = receipt_timestamp + " " + receipt_store
+
+        def get_items():
+            conn = kvitto.create_connection(trip_name)
+            item_table = conn.execute("SELECT item.name AS Item, item.price AS Price, item.qty AS Quantity, item.price*item.qty AS Total,  item.payor AS Payor FROM item WHERE timestamp=?;", (receipt_timestamp,))
+            for item in item_table:
+                trw_items.insert("", "end", values=item)
+            conn.close()
+            print('disconnected from db')
+
+        win_receipt = Toplevel(win_trip)
+        win_receipt.title(receipt_title)
+
+        lbl_items = Label(win_receipt, text="Items", font=(H1))
+        lbl_items.grid(row=0, column=0, padx=5, pady=5, sticky=W)
+
+        scroll_items = Scrollbar(win_receipt, orient=VERTICAL)
+        scroll_items.grid(row=1, column=3, padx=(0, 5), pady=5, sticky=NS)
+        trw_items = ttk.Treeview(win_receipt, columns=(1, 2, 3, 4, 5), show='headings', height=10)
+        trw_items.grid(row=1, column=0, columnspan=3, padx=(5, 0), pady=5, sticky=W)
+        trw_items.heading(1, text="Item")
+        trw_items.heading(2, text="Price")
+        trw_items.heading(3, text="Qty")
+        trw_items.heading(4, text="Total")
+        trw_items.heading(5, text="Payor")
+        trw_items.column(1, width=140)
+        trw_items.column(2, width=100)
+        trw_items.column(3, width=100)
+        trw_items.column(4, width=80)
+        trw_items.column(5, width=180)
+        scroll_items.config(command=trw_items.yview)
+
+        get_items()
+
+
 
     def new_receipt():
         None
