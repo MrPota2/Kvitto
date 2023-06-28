@@ -64,6 +64,7 @@ def trip_menu(event):
         print('disconnected from db')
 
     def get_users():
+        trw_users.delete(*trw_users.get_children())
         conn = kvitto.create_connection(trip_name)
         user_table = conn.execute("SELECT name FROM user;")
         for user in user_table:
@@ -114,7 +115,29 @@ def trip_menu(event):
         None
 
     def new_user():
-        None
+        def create_user():
+            conn = kvitto.create_connection(trip_name)
+            conn.execute("INSERT INTO user (name) VALUES (?);", (user_name.get(),))
+            conn.commit()
+            conn.close()
+            print('disconnected from db')
+            new_user.destroy()
+            get_users()
+
+    
+        new_user = Toplevel(win_trip)
+        new_user.title("Add user")
+
+        lbl_user = Label(new_user, text="Username:")
+        lbl_user.grid(row=0, column=0, padx=5, pady=5, sticky=W)
+
+        user_name = StringVar()
+        ent_user = Entry(new_user, width=20, textvariable=user_name)
+        ent_user.grid(row=0, column=1, padx=5, pady=5, sticky=W)
+
+        btn_confirm = Button(new_user, text="Confirm", width=20, command=create_user)
+        btn_confirm.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky=W)
+
 
     trip_name = lst_trip.get(lst_trip.curselection())
 
