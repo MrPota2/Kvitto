@@ -50,9 +50,14 @@ def trip_menu(event):
         receipt_table = conn.execute("SELECT * FROM receipt;")
         sum_per_receipt = conn.execute("SELECT timestamp, SUM(price*qty) AS sum FROM item GROUP BY timestamp;")
         for receipt in receipt_table:
+            sum_found = False
             for sum in sum_per_receipt:
                 if receipt[0] == sum[0]:
                     receipts.append(receipt + (sum[1],))
+                    sum_found = True
+                    break
+            if not sum_found:
+                receipts.append(receipt + (0,))
         for receipt in receipts:
             trw_receipts.insert("", "end", values=receipt)
         #sum of all receipts
@@ -125,7 +130,8 @@ def trip_menu(event):
 
         def create_receipt():
             conn = kvitto.create_connection(trip_name)
-            kvitto.new_receipt(conn, txt_receipt.get('1.0', 'end-1c'), receipt_store.get(), receipt_victim.get())
+            victim = kvitto.username_to_id(conn, receipt_victim.get())
+            kvitto.new_receipt(conn, txt_receipt.get('1.0', 'end-1c'), receipt_store.get(), victim)
             #text = txt_receipt.get('1.0', 'end-1c')
             #time = kvitto.get_timestamp(text)
             #conn = kvitto.create_connection(trip_name)

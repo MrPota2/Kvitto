@@ -161,7 +161,7 @@ def get_items(text):
     for product in all_products:
         product = product.replace('0%','15%').replace('25%','15%').split(' 15% ')
         items.append([product[0], float(product[-1].replace(',','.'))])
-        items[-1].append(1)
+        #items[-1].append(1)
     # merge duplicate items
     for i in range(len(items)):
         for j in range(i+1,len(items)):
@@ -186,6 +186,18 @@ def new_receipt(conn, receipt, store, victim):
     create_receipt(conn, timestamp, store, victim)
     for items in get_items(receipt):
         create_item(conn, timestamp, items[0], items[1], items[2])
+
+def username_to_id(conn, username):
+    """
+    Get receipt data
+    :param conn:
+    :param username:
+    :return: receipt data
+    """
+    sql = ''' SELECT id FROM user WHERE name=? '''
+    cur = conn.cursor()
+    cur.execute(sql, (username,))
+    return cur.fetchone()[0]
 
 
 def main():
