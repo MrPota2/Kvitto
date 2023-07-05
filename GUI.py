@@ -125,14 +125,18 @@ def trip_menu(event):
 
         def create_receipt():
             conn = kvitto.create_connection(trip_name)
-            conn.execute("INSERT INTO receipt (timestamp, store) VALUES (?, ?);", (receipt_timestamp.get(), receipt_store.get()))
-            conn.commit()
-            conn.close()
-            print('disconnected from db')
-            kvitto.get_items(trip_name, txt_receipt.get('1.0', 'END'))
-            items=new_receipt.destroy()
-            for item in items:
-                kvitto.create_item(trip_name, item)
+            kvitto.new_receipt(conn, txt_receipt.get('1.0', 'end-1c'), receipt_store.get(), receipt_victim.get())
+            #text = txt_receipt.get('1.0', 'end-1c')
+            #time = kvitto.get_timestamp(text)
+            #conn = kvitto.create_connection(trip_name)
+            #conn.execute("INSERT INTO receipt (timestamp, #store, victim) VALUES (?, ?, ?);", (time, #receipt_store.get(), receipt_victim.get()))
+            #conn.commit()
+            #conn.close()
+            #print('disconnected from db')
+            #kvitto.get_items(text)
+            #items=new_receipt.destroy()
+            #for item in items:
+            #    kvitto.create_item(trip_name, item)
             get_receipts()
 
         new_receipt = Toplevel(win_trip)
@@ -157,12 +161,19 @@ def trip_menu(event):
         ent_store = Entry(new_receipt, width=20, textvariable=receipt_store)
         ent_store.grid(row=1, column=1, padx=5, pady=5, sticky=W)
 
+        lbl_victim = Label(new_receipt, text="Victim:")
+        lbl_victim.grid(row=2, column=0, padx=5, pady=5, sticky=W)
+
+        receipt_victim = StringVar()
+        ent_victim = Entry(new_receipt, width=20, textvariable=receipt_victim)
+        ent_victim.grid(row=2, column=1, padx=5, pady=5, sticky=W)
+
         lbl_receipt = Label(new_receipt, text="Receipt text:", font=(H1))
-        lbl_receipt.grid(row=2, column=0, padx=5, pady=5, sticky=W)
+        lbl_receipt.grid(row=3, column=0, padx=5, pady=5, sticky=W)
 
 
-        txt_receipt = Text(new_receipt, width=40, height=50, wrap=WORD)
-        txt_receipt.grid(row=3, column=0, columnspan=2, padx=5, pady=5, sticky=W)
+        txt_receipt = Text(new_receipt, width=40, height=50)
+        txt_receipt.grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky=W)
 
         btn_confirm = Button(new_receipt, text="Confirm", width=20, command=create_receipt)
         btn_confirm.grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky=S)
