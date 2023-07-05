@@ -97,6 +97,7 @@ def create_receipt(conn, timestamp, store, victim):
     :param conn:
     :param receipt:
     """
+    victim = id_to_username(conn, victim)
     sql = ''' INSERT INTO receipt(timestamp,store,victim)
               VALUES(?,?,?) '''
     cur = conn.cursor()
@@ -152,16 +153,21 @@ def get_items(text):
     :return: receipt data
     """
     all_products = re.search(r'start([\s\S]*?)end', text).group()
-    all_products = all_products.split('\n')
+    all_products = all_products.split('\r\n')
     #remove first and last element
     all_products.pop(0)
     all_products.pop()
+    # remove empty elements
+    all_products = [product for product in all_products if product != '']
     # connect item to price
     items = []
     for product in all_products:
-        product = product.replace('0%','15%').replace('25%','15%').split(' 15% ')
-        items.append([product[0], float(product[-1].replace(',','.'))])
-        #items[-1].append(1)
+        try:
+            product = product.replace('0%','15%').replace('25%','15%').split(' 15% ')
+            items.append([product[0], float(product[-1].replace(',','.'))])
+            items[-1].append(1)
+        except:
+            print('Error: ', product)
     # merge duplicate items
     for i in range(len(items)):
         for j in range(i+1,len(items)):
@@ -170,7 +176,6 @@ def get_items(text):
                 items[j][2] = 0
     # remove duplicates
     items = [item for item in items if item[2] != 0]
-    print(items)
     return items
 
 def new_receipt(conn, receipt, store, victim):
@@ -197,6 +202,18 @@ def username_to_id(conn, username):
     sql = ''' SELECT id FROM user WHERE name=? '''
     cur = conn.cursor()
     cur.execute(sql, (username,))
+    return cur.fetchone()[0]
+
+def id_to_username(conn, id):
+    """
+    Get receipt data
+    :param conn:
+    :param id:
+    :return: receipt data
+    """
+    sql = ''' SELECT name FROM user WHERE id=? '''
+    cur = conn.cursor()
+    cur.execute(sql, (id,))
     return cur.fetchone()[0]
 
 

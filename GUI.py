@@ -45,6 +45,7 @@ def add_trip():
 
 def trip_menu(event):
     def get_receipts():
+        trw_receipts.delete(*trw_receipts.get_children())
         conn = kvitto.create_connection(trip_name)
         receipts = []
         receipt_table = conn.execute("SELECT * FROM receipt;")
